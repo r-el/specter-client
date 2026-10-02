@@ -105,6 +105,7 @@ function WatchlistsWorkspace() {
         icon={ListChecks}
         title="No watchlists yet."
         description="Create one to organize your targets."
+        action={<Button onClick={() => setEditor({})}><Plus />Create watchlist</Button>}
       />
     )}
     {Boolean(watchlists.data?.length) && <div className="grid items-start gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
