@@ -75,6 +75,31 @@ it("retries use separate sessions at 1/2/4 seconds, then fall back after three r
   unmount();
 });
 
+it("labels connection and playback states accurately", async () => {
+  render(<LivePlayer cameraId="cam-1" cameraName="Entrance" />);
+  expect(screen.getByText("Connecting to live video")).toBeTruthy();
+
+  await act(async () => {
+    vi.mocked(startMseSession).mock.calls[0][2]({ phase: "buffering", message: "Waiting for video" });
+  });
+  expect(screen.getByText("Buffering live video")).toBeTruthy();
+
+  await act(async () => {
+    vi.mocked(startMseSession).mock.calls[0][2]({ phase: "playing", message: "Playback started" });
+  });
+  expect(screen.getByText("Live video")).toBeTruthy();
+
+  await act(async () => {
+    vi.mocked(startMseSession).mock.calls[0][2]({ phase: "paused", message: "Playback paused" });
+  });
+  expect(screen.getByText("Video paused")).toBeTruthy();
+
+  await act(async () => {
+    vi.mocked(startMseSession).mock.calls[0][2]({ phase: "retrying", message: "Retrying shortly" });
+  });
+  expect(screen.getByText("Reconnecting to live video")).toBeTruthy();
+});
+
 it("manual snapshot mode stops video, and Try live video cancels snapshots and reconnects", async () => {
   const { unmount } = render(<LivePlayer cameraId="cam-1" cameraName="Entrance" />);
   await act(async () => { fireEvent.click(screen.getByRole("button", { name: "Use snapshots" })); });

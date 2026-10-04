@@ -10,6 +10,15 @@ export function LivePlayer({ cameraId, cameraName }: { cameraId: string; cameraN
   const live = useLiveVideo(cameraId, !snapshotSelected);
   const isSnapshot = snapshotSelected || live.state.phase === "failed";
   const snapshot = useLiveSnapshots(cameraId, isSnapshot);
+  const liveStatus = {
+    connecting: "Connecting to live video",
+    buffering: "Buffering live video",
+    playing: "Live video",
+    paused: "Video paused",
+    retrying: "Reconnecting to live video",
+    failed: "Live video unavailable",
+  }[live.state.phase];
+  const isPlaying = live.state.phase === "playing" && !isSnapshot;
 
   function retryVideo() {
     setSnapshotSelected(false);
@@ -24,18 +33,20 @@ export function LivePlayer({ cameraId, cameraName }: { cameraId: string; cameraN
           className={
             isSnapshot
               ? "gap-1.5 border-amber-400/30 bg-amber-400/10 text-amber-400"
-              : "gap-1.5 border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
+              : isPlaying
+              ? "gap-1.5 border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
+              : "gap-1.5 border-amber-400/30 bg-amber-400/10 text-amber-400"
           }
         >
           {isSnapshot ? (
             <ImageIcon className="h-3 w-3" />
-          ) : (
+          ) : isPlaying ? (
             <span className="relative flex h-2 w-2" aria-hidden="true">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
               <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
             </span>
-          )}
-          {isSnapshot ? "JPEG snapshots — not live video" : "Live stream"}
+          ) : <span className="inline-flex h-2 w-2 rounded-full bg-amber-500" aria-hidden="true" />}
+          {isSnapshot ? "JPEG snapshots — not live video" : liveStatus}
         </Badge>
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" size="sm" onClick={retryVideo}>
