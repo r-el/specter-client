@@ -51,42 +51,6 @@ export default defineConfig(({ mode }) => {
       // Minimize bundle size
       minify: 'esbuild',
 
-      // Optimize chunk splitting for better caching
-      rollupOptions: {
-        output: {
-          manualChunks: (id) => {
-            // Vendor chunk for React and related libraries
-            if (id.includes('node_modules')) {
-              // React core
-              if (id.includes('react') || id.includes('react-dom') || id.includes('react-router-dom')) {
-                return 'vendor-react';
-              }
-              // UI libraries
-              if (id.includes('@radix-ui') || id.includes('lucide-react')) {
-                return 'vendor-ui';
-              }
-              // Charts
-              if (id.includes('recharts')) {
-                return 'vendor-charts';
-              }
-              // Animation
-              if (id.includes('framer-motion')) {
-                return 'vendor-motion';
-              }
-              // Realtime
-              if (id.includes('socket.io')) {
-                return 'vendor-realtime';
-              }
-              // Data fetching
-              if (id.includes('@tanstack/react-query')) {
-                return 'vendor-query';
-              }
-              // Other vendors
-              return 'vendor';
-            }
-          }
-        }
-      }
     },
     
     define: {
