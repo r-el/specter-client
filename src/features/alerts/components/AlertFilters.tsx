@@ -1,96 +1,187 @@
 import { useId, useState } from "react";
 import type { FormEvent } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import type { AlertDisposition, AlertFilters, AlertKind } from "@/features/alerts/api/alerts";
 
-const emptyDraft = { cameras: "", kind: "", disposition: "", since: "", until: "" };
-const selectClass = "h-10 w-full rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
+import { CameraPicker } from "./CameraPicker";
+import { DateRangePicker, localInputToIso, presetRange, type DatePreset } from "./DateRangePicker";
+
+// ── Main AlertFiltersForm ─────────────────────────────────────────────────────
+
 
 export function AlertFiltersForm({ onApply }: { onApply: (filters: AlertFilters) => void }) {
   const id = useId();
-  const [draft, setDraft] = useState(emptyDraft);
+  const [cameras, setCameras] = useState<string[]>([]);
+  const [kind, setKind] = useState("");
+  const [disposition, setDisposition] = useState("");
+  const [preset, setPreset] = useState<DatePreset>("all");
+  const [since, setSince] = useState("");
+  const [until, setUntil] = useState("");
   const [error, setError] = useState("");
   const [isApplied, setIsApplied] = useState(false);
-  const update = (key: keyof typeof emptyDraft, value: string) => {
-    setDraft((current) => ({ ...current, [key]: value }));
-    setIsApplied(false);
+
+  const handlePresetChange = (p: DatePreset) => {
+    setPreset(p);
     setError("");
+    setIsApplied(false);
+    if (p !== "custom") {
+      setSince("");
+      setUntil("");
+    }
   };
+
+  const reset = () => {
+    setCameras([]);
+    setKind("");
+    setDisposition("");
+    setPreset("all");
+    setSince("");
+    setUntil("");
+    setError("");
+    setIsApplied(false);
+    onApply({});
+  };
+
+  const hasActiveFilters =
+    cameras.length > 0 || kind !== "" || disposition !== "" || preset !== "all";
 
   function apply(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const since = draft.since ? new Date(draft.since) : undefined;
-    const until = draft.until ? new Date(draft.until) : undefined;
-    if ((since && !Number.isFinite(since.getTime())) || (until && !Number.isFinite(until.getTime()))) {
-      setError("Enter valid dates.");
-      return;
-    }
-    if (since && until && since > until) {
-      setError("The start date must be before or equal to the end date.");
-      return;
-    }
-    const cameras = [...new Set(draft.cameras.split(",").map((value) => value.trim()).filter(Boolean))];
-    if (cameras.length > 500) {
-      setError("Select no more than 500 camera IDs.");
-      return;
-    }
     setError("");
+
+    // Resolve date range
+    let resolvedSince: string | undefined;
+    let resolvedUntil: string | undefined;
+
+    if (preset === "custom") {
+      resolvedSince = localInputToIso(since);
+      resolvedUntil = localInputToIso(until);
+      if ((since && !resolvedSince) || (until && !resolvedUntil)) {
+        setError("Enter valid dates.");
+        return;
+      }
+      if (resolvedSince && resolvedUntil && resolvedSince > resolvedUntil) {
+        setError("The start date must be before or equal to the end date.");
+        return;
+      }
+    } else {
+      const range = presetRange(preset);
+      resolvedSince = range.since;
+      resolvedUntil = range.until;
+    }
+
+    if (cameras.length > 500) {
+      setError("Select no more than 500 cameras.");
+      return;
+    }
+
     onApply({
       camera_id: cameras.length ? cameras : undefined,
-      kind: (draft.kind || undefined) as AlertKind | undefined,
-      disposition: (draft.disposition || undefined) as AlertDisposition | undefined,
-      created_since: since?.toISOString(),
-      created_until: until?.toISOString(),
+      kind: (kind || undefined) as AlertKind | undefined,
+      disposition: (disposition || undefined) as AlertDisposition | undefined,
+      created_since: resolvedSince,
+      created_until: resolvedUntil,
     });
     setIsApplied(true);
   }
 
   return (
-    <form onSubmit={apply} className="mb-6 space-y-4 rounded-xl border border-white/10 bg-white/5 p-4" aria-label="Filter alerts">
+    <form
+      onSubmit={apply}
+      className="mb-6 space-y-4 rounded-xl border border-white/10 bg-white/5 p-4"
+      aria-label="Filter alerts"
+    >
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {/* Camera picker */}
+        <CameraPicker id={id} selected={cameras} onChange={(ids) => { setCameras(ids); setIsApplied(false); }} />
+
+        {/* Kind filter */}
         <div className="space-y-2">
-          <label htmlFor={`${id}-cameras`} className="text-sm font-medium">Camera IDs</label>
-          <Input id={`${id}-cameras`} value={draft.cameras} onChange={(event) => update("cameras", event.target.value)} placeholder="All cameras (or comma-separated IDs)" aria-describedby={`${id}-help`} />
+          <span className="text-sm font-medium">Alert kind</span>
+          <div className="flex flex-wrap gap-1.5">
+            {(
+              [
+                { value: "", label: "All" },
+                { value: "identity_match", label: "Identity match" },
+                { value: "rule", label: "Rule" },
+              ] as const
+            ).map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => { setKind(opt.value); setIsApplied(false); }}
+                className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+                  kind === opt.value
+                    ? "border-primary bg-primary/20 text-primary"
+                    : "border-white/10 bg-white/5 text-muted-foreground hover:bg-white/10 hover:text-foreground"
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
         </div>
+
+        {/* Disposition filter */}
         <div className="space-y-2">
-          <label htmlFor={`${id}-kind`} className="text-sm font-medium">Alert kind</label>
-          <select id={`${id}-kind`} className={selectClass} value={draft.kind} onChange={(event) => update("kind", event.target.value)}>
-            <option value="">All kinds</option>
-            <option value="identity_match">Identity match</option>
-            <option value="rule">Rule</option>
-          </select>
+          <span className="text-sm font-medium">Disposition</span>
+          <div className="flex flex-wrap gap-1.5">
+            {(
+              [
+                { value: "", label: "All" },
+                { value: "unreviewed", label: "Unreviewed" },
+                { value: "true_positive", label: "True positive" },
+                { value: "false_positive", label: "False positive" },
+              ] as const
+            ).map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => { setDisposition(opt.value); setIsApplied(false); }}
+                className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+                  disposition === opt.value
+                    ? "border-primary bg-primary/20 text-primary"
+                    : "border-white/10 bg-white/5 text-muted-foreground hover:bg-white/10 hover:text-foreground"
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
         </div>
-        <div className="space-y-2">
-          <label htmlFor={`${id}-disposition`} className="text-sm font-medium">Disposition</label>
-          <select id={`${id}-disposition`} className={selectClass} value={draft.disposition} onChange={(event) => update("disposition", event.target.value)}>
-            <option value="">All dispositions</option>
-            <option value="unreviewed">Unreviewed</option>
-            <option value="true_positive">True positive</option>
-            <option value="false_positive">False positive</option>
-          </select>
-        </div>
-        <div className="space-y-2">
-          <label htmlFor={`${id}-since`} className="text-sm font-medium">Created from (local time)</label>
-          <Input id={`${id}-since`} type="datetime-local" step="1" value={draft.since} onChange={(event) => update("since", event.target.value)} />
-        </div>
-        <div className="space-y-2">
-          <label htmlFor={`${id}-until`} className="text-sm font-medium">Created until (local time)</label>
-          <Input id={`${id}-until`} type="datetime-local" step="1" value={draft.until} onChange={(event) => update("until", event.target.value)} />
-        </div>
-        <div className="flex items-end gap-2">
-          <Button type="submit">Apply filters</Button>
-          <Button type="button" variant="outline" onClick={() => {
-            setDraft(emptyDraft);
-            setError("");
-            setIsApplied(false);
-            onApply({});
-          }}>Reset</Button>
+
+        {/* Date range */}
+        <DateRangePicker
+          id={id}
+          preset={preset}
+          since={since}
+          until={until}
+          onPresetChange={handlePresetChange}
+          onSinceChange={(v) => { setSince(v); setIsApplied(false); }}
+          onUntilChange={(v) => { setUntil(v); setIsApplied(false); }}
+        />
+
+        {/* Actions */}
+        <div className="flex items-end gap-2 sm:col-span-2 lg:col-span-1">
+          <Button type="submit" className="flex-1">
+            Apply filters
+          </Button>
+          {hasActiveFilters && (
+            <Button type="button" variant="outline" onClick={reset}>
+              Reset
+            </Button>
+          )}
         </div>
       </div>
-      <p id={`${id}-help`} className="text-xs text-muted-foreground">Filters are applied on the server to the entire alert history. Camera IDs are available in alert details.</p>
-      {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
-      <p role="status" className="text-xs text-muted-foreground">{isApplied ? "Filters applied." : "Apply filters to update results."}</p>
+
+      {error && (
+        <p role="alert" className="text-sm text-destructive">
+          {error}
+        </p>
+      )}
+      <p role="status" className="text-xs text-muted-foreground">
+        {isApplied ? "Filters applied." : "Apply filters to update results."}
+      </p>
     </form>
   );
 }
