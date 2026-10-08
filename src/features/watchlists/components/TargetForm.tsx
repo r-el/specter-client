@@ -67,10 +67,33 @@ export function TargetForm({ initial, targetType, busy, onClose, onSave }: Targe
               onChange={setMetadata}
             />
             {initial && (
-              <label className="flex items-center gap-2 text-sm">
-                <input type="checkbox" checked={enabled} onChange={(event) => setEnabled(event.target.checked)} />
-                Enabled for matching
-              </label>
+              <div className="space-y-1.5">
+                <span className="text-sm font-medium">Matching status</span>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={enabled}
+                  onClick={() => setEnabled((v) => !v)}
+                  className={`flex w-full items-center justify-between rounded-xl border px-4 py-2.5 text-sm transition-colors ${
+                    enabled
+                      ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
+                      : "border-white/10 bg-white/5 text-muted-foreground"
+                  }`}
+                >
+                  <span>{enabled ? "Enabled for matching" : "Disabled — will not match"}</span>
+                  <span
+                    className={`h-5 w-9 rounded-full border transition-colors ${
+                      enabled ? "border-emerald-500/50 bg-emerald-500/30" : "border-white/10 bg-white/10"
+                    } relative`}
+                  >
+                    <span
+                      className={`absolute top-0.5 h-4 w-4 rounded-full transition-all ${
+                        enabled ? "left-4 bg-emerald-400" : "left-0.5 bg-white/40"
+                      }`}
+                    />
+                  </span>
+                </button>
+              </div>
             )}
             {targetType !== "person" && (
               <p className="text-sm text-amber-400">
