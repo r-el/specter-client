@@ -34,6 +34,14 @@ describe("cameraFormSchema", () => {
     expect(result.success).toBe(false);
   });
 
+  it("accepts local FFmpeg sources", () => {
+    const result = cameraFormSchema.safeParse({
+      ...validCamera,
+      source_url: "ffmpeg:/dev/video0#video=h264",
+    });
+    expect(result.success).toBe(true);
+  });
+
   it("rejects empty name", () => {
     const result = cameraFormSchema.safeParse({
       ...validCamera,

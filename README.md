@@ -48,7 +48,7 @@ Client environment variables can be configured in `.env` or `.env.production`:
 VITE_API_BASE_URL=http://localhost:12113
 ```
 
-*(If served from the same domain or behind a reverse proxy, the client defaults to relative `/api` calls).*
+The variable is required because the client and server are deployed independently.
 
 ---
 

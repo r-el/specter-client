@@ -32,7 +32,7 @@
         "https:",
         "wss:",
         "https://api.specter.security",
-        "https://api.specter.live",
+        "https://api.eyec.live",
         "https://fonts.googleapis.com"
       ],
       "frame-src": [

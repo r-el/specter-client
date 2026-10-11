@@ -127,7 +127,7 @@ function CameraForm({ camera, onClose, onSaving }: {
               </button>
             ))}
           </div>
-          <Input required maxLength={MAX_SOURCE_URL_LENGTH} placeholder="rtsp://camera-host:554/stream" autoComplete="off" value={sourceUrl} onChange={(event) => setSourceUrl(event.target.value)} />
+          <Input required maxLength={MAX_SOURCE_URL_LENGTH} placeholder="rtsp://camera-host:554/stream or ffmpeg:/dev/video0" autoComplete="off" value={sourceUrl} onChange={(event) => setSourceUrl(event.target.value)} />
         </div>
         <label className="block space-y-1 text-sm">Location
           <Input maxLength={MAX_LOCATION_LENGTH} value={location} onChange={(event) => setLocation(event.target.value)} />
