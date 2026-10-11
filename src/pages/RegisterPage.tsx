@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import type { FormEvent } from "react";
+import type { ClipboardEvent, FormEvent, KeyboardEvent } from "react";
 import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowRight, Shield, Check, Eye, EyeOff, LockKeyhole, Mail, UserRound, Loader2 } from "lucide-react";
@@ -67,18 +67,42 @@ export default function RegisterPage() {
   };
 
   const handleCodeChange = (index: number, value: string) => {
-    if (value.length > 1) value = value.slice(-1);
+    const digits = value.replace(/\D/g, "");
+
+    if (digits.length > 1) {
+      applyPastedCode(index, digits);
+      return;
+    }
+
     const newCode = [...verificationCode];
-    newCode[index] = value;
+    newCode[index] = digits;
     setVerificationCode(newCode);
 
-    // Auto-focus next input
-    if (value && index < 5) {
+    if (digits && index < 5) {
       inputRefs.current[index + 1]?.focus();
     }
   };
 
-  const handleCodeKeyDown = (index: number, e: React.KeyboardEvent) => {
+  const applyPastedCode = (startIndex: number, value: string) => {
+    const digits = value.replace(/\D/g, "").slice(0, 6 - startIndex);
+    if (!digits) return;
+
+    const newCode = [...verificationCode];
+    digits.split("").forEach((digit, offset) => {
+      newCode[startIndex + offset] = digit;
+    });
+    setVerificationCode(newCode);
+
+    const nextIndex = Math.min(startIndex + digits.length, 5);
+    inputRefs.current[nextIndex]?.focus();
+  };
+
+  const handleCodePaste = (index: number, event: ClipboardEvent<HTMLInputElement>) => {
+    event.preventDefault();
+    applyPastedCode(index, event.clipboardData.getData("text"));
+  };
+
+  const handleCodeKeyDown = (index: number, e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Backspace" && !verificationCode[index] && index > 0) {
       inputRefs.current[index - 1]?.focus();
     }
@@ -202,6 +226,7 @@ export default function RegisterPage() {
                       maxLength={1}
                       value={digit}
                       onChange={(e) => handleCodeChange(index, e.target.value)}
+                      onPaste={(e) => handleCodePaste(index, e)}
                       onKeyDown={(e) => handleCodeKeyDown(index, e)}
                       className="h-14 w-12 rounded-xl border border-white/10 bg-white/[0.06] text-center text-2xl font-bold text-white focus:border-cyan-300/60 focus:outline-none focus:ring-2 focus:ring-cyan-300/20 transition-all"
                     />
