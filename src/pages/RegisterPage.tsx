@@ -1,5 +1,5 @@
-import { useState, useRef } from "react";
-import type { ClipboardEvent, FormEvent, KeyboardEvent } from "react";
+import { useState } from "react";
+import type { FormEvent } from "react";
 import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowRight, Shield, Check, Eye, EyeOff, LockKeyhole, Mail, UserRound, Loader2 } from "lucide-react";
@@ -21,8 +21,7 @@ export default function RegisterPage() {
   const [step, setStep] = useState<Step>("form");
   const [registeredEmail, setRegisteredEmail] = useState("");
   const [resendStatus, setResendStatus] = useState("");
-  const [verificationCode, setVerificationCode] = useState(["", "", "", "", "", ""]);
-  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const [verificationCode, setVerificationCode] = useState("");
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -66,58 +65,15 @@ export default function RegisterPage() {
     }
   };
 
-  const handleCodeChange = (index: number, value: string) => {
-    const digits = value.replace(/\D/g, "");
-
-    if (digits.length > 1) {
-      applyPastedCode(index, digits);
-      return;
-    }
-
-    const newCode = [...verificationCode];
-    newCode[index] = digits;
-    setVerificationCode(newCode);
-
-    if (digits && index < 5) {
-      inputRefs.current[index + 1]?.focus();
-    }
-  };
-
-  const applyPastedCode = (startIndex: number, value: string) => {
-    const digits = value.replace(/\D/g, "").slice(0, 6 - startIndex);
-    if (!digits) return;
-
-    const newCode = [...verificationCode];
-    digits.split("").forEach((digit, offset) => {
-      newCode[startIndex + offset] = digit;
-    });
-    setVerificationCode(newCode);
-
-    const nextIndex = Math.min(startIndex + digits.length, 5);
-    inputRefs.current[nextIndex]?.focus();
-  };
-
-  const handleCodePaste = (index: number, event: ClipboardEvent<HTMLInputElement>) => {
-    event.preventDefault();
-    applyPastedCode(index, event.clipboardData.getData("text"));
-  };
-
-  const handleCodeKeyDown = (index: number, e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Backspace" && !verificationCode[index] && index > 0) {
-      inputRefs.current[index - 1]?.focus();
-    }
-  };
-
   const handleVerify = async () => {
-    const code = verificationCode.join("");
-    if (code.length !== 6) {
+    if (verificationCode.length !== 6) {
       setError("Please enter the full 6-digit code.");
       return;
     }
     setIsSubmitting(true);
     setError("");
     try {
-      const res = await verifyCode(registeredEmail, code);
+      const res = await verifyCode(registeredEmail, verificationCode);
       if (res.success && res.data) {
         localStorage.setItem("token", res.data.token);
         localStorage.setItem("user", JSON.stringify(res.data.user));
@@ -216,21 +172,19 @@ export default function RegisterPage() {
                   We sent a 6-digit code to <strong className="text-white">{registeredEmail || "your email"}</strong>. Enter it below to activate your account.
                 </p>
 
-                <div className="mt-8 flex justify-center gap-3">
-                  {verificationCode.map((digit, index) => (
-                    <input
-                      key={index}
-                      ref={(el) => { inputRefs.current[index] = el }}
-                      type="text"
-                      inputMode="numeric"
-                      maxLength={1}
-                      value={digit}
-                      onChange={(e) => handleCodeChange(index, e.target.value)}
-                      onPaste={(e) => handleCodePaste(index, e)}
-                      onKeyDown={(e) => handleCodeKeyDown(index, e)}
-                      className="h-14 w-12 rounded-xl border border-white/10 bg-white/[0.06] text-center text-2xl font-bold text-white focus:border-cyan-300/60 focus:outline-none focus:ring-2 focus:ring-cyan-300/20 transition-all"
-                    />
-                  ))}
+                <div className="mt-8 flex justify-center">
+                  <Input
+                    type="text"
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    maxLength={6}
+                    pattern="[0-9]{6}"
+                    value={verificationCode}
+                    onChange={(event) => setVerificationCode(event.target.value.replace(/\D/g, "").slice(0, 6))}
+                    placeholder="000000"
+                    aria-label="6-digit verification code"
+                    className="h-14 max-w-xs text-center text-2xl font-bold tracking-[0.75em] text-white placeholder:text-slate-500"
+                  />
                 </div>
 
                 {error && <p className="mt-4 text-center text-sm text-rose-300" role="alert">{error}</p>}
