@@ -16,12 +16,15 @@ export const cameraSourceUrlSchema = z
   .min(1, "Source URL is required.")
   .max(MAX_SOURCE_URL_LENGTH, `Source URL cannot exceed ${MAX_SOURCE_URL_LENGTH} characters.`)
   .superRefine((val, ctx) => {
+    if (/^ffmpeg:[^\s]+$/i.test(val)) {
+      return;
+    }
     try {
       const parsed = new URL(val);
       if (!/^(rtsps?|https?):$/.test(parsed.protocol) || !parsed.hostname || /\s/.test(val)) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: "Enter a valid RTSP, RTSPS, HTTP or HTTPS source URL.",
+          message: "Enter a valid RTSP, RTSPS, HTTP, HTTPS or FFmpeg source URL.",
         });
         return;
       }
@@ -34,7 +37,7 @@ export const cameraSourceUrlSchema = z
     } catch {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: "Enter a valid RTSP, RTSPS, HTTP or HTTPS source URL.",
+        message: "Enter a valid RTSP, RTSPS, HTTP, HTTPS or FFmpeg source URL.",
       });
     }
   });
