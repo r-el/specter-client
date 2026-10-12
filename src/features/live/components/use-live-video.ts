@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { startMseSession } from "../lib/mse-session";
+import { startWebrtcSession } from "../lib/webrtc-session";
 import type { PlaybackState } from "../lib/mse-session";
 
 const MAX_RETRIES = 3;
 
-export function useLiveVideo(cameraId: string, enabled: boolean) {
+export function useLiveVideo(cameraId: string, enabled: boolean, preferWebrtc = false) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [attempt, setAttempt] = useState(0);
   const [state, setState] = useState<PlaybackState>({ phase: "connecting", message: "Connecting…" });
@@ -24,7 +25,8 @@ export function useLiveVideo(cameraId: string, enabled: boolean) {
     function connect() {
       if (cancelled) return;
       stopSession?.();
-      stopSession = startMseSession(cameraId, video!, (next) => {
+      const startSession = preferWebrtc ? startWebrtcSession : startMseSession;
+      stopSession = startSession(cameraId, video!, (next) => {
         if (!cancelled) setState(next);
       }, (failure) => {
         if (cancelled) return;

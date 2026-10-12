@@ -48,6 +48,26 @@ export async function requestLiveSocketUrl(cameraId: string, signal: AbortSignal
   return buildLiveSocketUrl(api.getUri({ url: `${path}/mse` }), window.location.href, data.data.ticket);
 }
 
+export interface RtcIceServer {
+  urls: string | string[];
+  username?: string;
+  credential?: string;
+}
+
+export async function getLiveIceServers(cameraId: string, signal: AbortSignal): Promise<RtcIceServer[]> {
+  const path = `${cameraPath(cameraId)}/live/ice-servers`;
+  assertSecureApi(path);
+  const { data } = await api.get<Envelope<{ iceServers: RtcIceServer[] }>>(path, {
+    signal,
+    timeout: 10000,
+  });
+  signal.throwIfAborted();
+  if (!data.success || !data.data || !Array.isArray(data.data.iceServers)) {
+    throw new Error("The ICE servers response was invalid.");
+  }
+  return data.data.iceServers;
+}
+
 export async function getLiveFrame(cameraId: string, signal: AbortSignal): Promise<Blob> {
   const path = `${cameraPath(cameraId)}/live/frame.jpeg`;
   assertSecureApi(path);
