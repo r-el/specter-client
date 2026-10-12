@@ -42,7 +42,7 @@ function CameraLiveView({ cameraId }: { cameraId: string }) {
               </div>
             </div>
           </CardHeader>
-          <CardContent><LivePlayer key={camera.id} cameraId={camera.id} cameraName={camera.name} /></CardContent>
+          <CardContent><LivePlayer key={camera.id} cameraId={camera.id} cameraName={camera.name} preferWebrtc={true} /></CardContent>
         </Card>
       )}
 

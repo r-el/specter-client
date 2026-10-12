@@ -5,9 +5,17 @@ import { Button } from "../../../components/ui/button";
 import { useLiveVideo } from "./use-live-video";
 import { useLiveSnapshots } from "./use-live-snapshots";
 
-export function LivePlayer({ cameraId, cameraName }: { cameraId: string; cameraName: string }) {
+export function LivePlayer({
+  cameraId,
+  cameraName,
+  preferWebrtc = false,
+}: {
+  cameraId: string;
+  cameraName: string;
+  preferWebrtc?: boolean;
+}) {
   const [snapshotSelected, setSnapshotSelected] = useState(false);
-  const live = useLiveVideo(cameraId, !snapshotSelected);
+  const live = useLiveVideo(cameraId, !snapshotSelected, preferWebrtc);
   const isSnapshot = snapshotSelected || live.state.phase === "failed";
   const snapshot = useLiveSnapshots(cameraId, isSnapshot);
   const liveStatus = {

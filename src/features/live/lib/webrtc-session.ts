@@ -94,13 +94,17 @@ export function startWebrtcSession(
         transports: ["websocket", "polling"],
       });
 
+      const pendingCandidates: RTCIceCandidateInit[] = [];
       pc.onicecandidate = (event) => {
-        if (event.candidate && socket?.connected) {
+        if (!event.candidate) return;
+        if (socket?.connected) {
           socket.emit("webrtc:ice_candidate", {
             cameraId,
             candidate: event.candidate,
             correlationId,
           });
+        } else {
+          pendingCandidates.push(event.candidate.toJSON());
         }
       };
 
@@ -130,14 +134,28 @@ export function startWebrtcSession(
       if (disposed) return;
       await pc.setLocalDescription(offer);
 
-      socket.on("connect", () => {
+      const sendOffer = () => {
         if (disposed || !offer.sdp) return;
         socket?.emit("webrtc:offer", {
           cameraId,
           sdp: offer.sdp,
           correlationId,
         });
-      });
+        while (pendingCandidates.length > 0) {
+          const candidate = pendingCandidates.shift();
+          socket?.emit("webrtc:ice_candidate", {
+            cameraId,
+            candidate,
+            correlationId,
+          });
+        }
+      };
+
+      if (socket.connected) {
+        sendOffer();
+      } else {
+        socket.once("connect", sendOffer);
+      }
     } catch (error) {
       if (!disposed) {
         fail(liveFailure(error).message, true);
