@@ -11,6 +11,8 @@ COPY . ./
 # Configure the API URL at build time.
 ARG VITE_API_BASE_URL
 ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
+ARG VITE_GOOGLE_CLIENT_ID
+ENV VITE_GOOGLE_CLIENT_ID=$VITE_GOOGLE_CLIENT_ID
 
 # Build the frontend into the dist directory.
 RUN npm run build

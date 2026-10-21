@@ -3,6 +3,8 @@ import type { FormEvent } from "react";
 import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowRight, Shield, Check, Eye, EyeOff, LockKeyhole, Mail, UserRound, Loader2 } from "lucide-react";
+import { GoogleLogin } from "@react-oauth/google";
+import type { CredentialResponse } from "@react-oauth/google";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,7 +16,7 @@ type Step = "form" | "verify";
 
 export default function RegisterPage() {
   const navigate = useNavigate();
-  const { register } = useAuth();
+  const { register, loginWithGoogle } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -101,6 +103,27 @@ export default function RegisterPage() {
     }
   };
 
+  const handleGoogleSuccess = async (credentialResponse: CredentialResponse) => {
+    if (!credentialResponse.credential) {
+      setError("Failed to retrieve Google credentials.");
+      return;
+    }
+    setIsSubmitting(true);
+    setError("");
+    try {
+      const result = await loginWithGoogle(credentialResponse.credential);
+      if (result.success) {
+        navigate("/");
+      } else {
+        setError(result.error || "Google sign-in failed.");
+      }
+    } catch (err: unknown) {
+      setError((err as Error)?.message || "Google sign-in failed.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <main className="relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-12 md:px-6">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_16%_12%,rgba(129,140,248,0.18),transparent_32%),radial-gradient(circle_at_88%_82%,rgba(45,212,191,0.14),transparent_34%)]" />
@@ -158,6 +181,29 @@ export default function RegisterPage() {
                     {!isSubmitting && <ArrowRight className="h-4 w-4" />}
                   </Button>
                 </form>
+
+                {/* Google Sign-In */}
+                <div className="relative my-5">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-white/10" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-slate-950/80 px-3 font-medium text-slate-400">Or continue with</span>
+                  </div>
+                </div>
+                <div className="flex w-full justify-center">
+                  <GoogleLogin
+                    onSuccess={handleGoogleSuccess}
+                    onError={() => setError("Google sign-in was unsuccessful. Try again.")}
+                    theme="filled_black"
+                    shape="rectangular"
+                    size="large"
+                    width="384"
+                    logo_alignment="left"
+                    text="signup_with"
+                  />
+                </div>
+
                 <p className="mt-7 text-center text-sm text-slate-400">Already have an account? <Link to="/login" className="font-medium text-cyan-200 transition-colors hover:text-white">Sign in</Link></p>
               </>
             ) : (

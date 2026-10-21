@@ -31,3 +31,9 @@ export const resendCode = async (email: string): Promise<{ success: boolean; mes
   return response.data;
 };
 
+export const loginWithGoogle = async (idToken: string): Promise<AuthResponse> => {
+  const response = await api.post("/auth/google", { idToken });
+  return response.data;
+};
+
+

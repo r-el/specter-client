@@ -2,6 +2,8 @@ import { useState } from "react";
 import type { FormEvent } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { ArrowRight, Shield, CheckCircle2, Eye, EyeOff, LockKeyhole, Mail, ShieldCheck } from "lucide-react";
+import { GoogleLogin } from "@react-oauth/google";
+import type { CredentialResponse } from "@react-oauth/google";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,7 +11,7 @@ import { useAuth } from "@/context/AuthContext";
 
 export default function LoginPage() {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, loginWithGoogle } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -28,10 +30,35 @@ export default function LoginPage() {
 
     setIsSubmitting(true);
     try {
-      await login({ username, password });
-      navigate("/");
+      const result = await login({ username, password });
+      if (result.success) {
+        navigate("/");
+      } else {
+        setError(result.error || "Authentication failed. Check your credentials.");
+      }
     } catch (err: unknown) {
       setError((err as Error)?.message || "Authentication failed. Check your credentials.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleGoogleSuccess = async (credentialResponse: CredentialResponse) => {
+    if (!credentialResponse.credential) {
+      setError("Failed to retrieve Google credentials.");
+      return;
+    }
+    setIsSubmitting(true);
+    setError("");
+    try {
+      const result = await loginWithGoogle(credentialResponse.credential);
+      if (result.success) {
+        navigate("/");
+      } else {
+        setError(result.error || "Google sign-in failed.");
+      }
+    } catch (err: unknown) {
+      setError((err as Error)?.message || "Google sign-in failed.");
     } finally {
       setIsSubmitting(false);
     }
@@ -104,6 +131,28 @@ export default function LoginPage() {
                 {!isSubmitting && <ArrowRight className="h-4 w-4" />}
               </Button>
             </form>
+
+            {/* Google Sign-In */}
+            <div className="relative my-6">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-white/10" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-slate-950/80 px-3 font-medium text-slate-400">Or continue with</span>
+              </div>
+            </div>
+            <div className="flex w-full justify-center">
+              <GoogleLogin
+                onSuccess={handleGoogleSuccess}
+                onError={() => setError("Google sign-in was unsuccessful. Try again.")}
+                theme="filled_black"
+                shape="rectangular"
+                size="large"
+                width="384"
+                logo_alignment="left"
+              />
+            </div>
+
             <p className="mt-7 text-center text-sm text-slate-400">
               New to Specter?{" "}
               <Link to="/register" className="font-medium text-cyan-200 transition-colors hover:text-white">
