@@ -61,7 +61,7 @@ export function AlertFiltersForm({ onApply }: { onApply: (filters: AlertFilters)
         return;
       }
       if (resolvedSince && resolvedUntil && resolvedSince > resolvedUntil) {
-        setError("The start date must be before or equal to the end date.");
+        setError("Start date must be before or equal to the end date.");
         return;
       }
     } else {

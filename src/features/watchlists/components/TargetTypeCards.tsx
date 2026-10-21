@@ -38,12 +38,25 @@ export interface TargetTypeCardsProps {
 export function TargetTypeCards({ value, onChange, disabled, id }: TargetTypeCardsProps) {
   return (
     <div className="space-y-2">
-      <span className="text-sm font-medium" id={`${id}-type-label`}>
+      <label htmlFor={`${id}-type`} className="block text-sm font-medium" id={`${id}-type-label`}>
         Target type
         {disabled && (
           <span className="ml-2 text-xs text-muted-foreground font-normal">(locked after creation)</span>
         )}
-      </span>
+      </label>
+      <select
+        id={`${id}-type`}
+        aria-label="Target type"
+        disabled={disabled}
+        value={value}
+        onChange={(e) => onChange(e.target.value as TargetType)}
+        className="sr-only"
+        tabIndex={-1}
+      >
+        <option value="person">Person</option>
+        <option value="vehicle">Vehicle</option>
+        <option value="object">Object</option>
+      </select>
       <div className="grid grid-cols-3 gap-2" role="group" aria-labelledby={`${id}-type-label`}>
         {TARGET_TYPE_OPTIONS.map((opt) => {
           const isSelected = value === opt.value;

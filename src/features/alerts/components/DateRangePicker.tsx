@@ -77,10 +77,11 @@ export function DateRangePicker({
         <div className="grid grid-cols-2 gap-3 pt-1">
           <div className="space-y-1">
             <label htmlFor={`${id}-since`} className="text-xs text-muted-foreground">
-              From (local time)
+              From
             </label>
             <Input
               id={`${id}-since`}
+              aria-label="From"
               type="datetime-local"
               step="1"
               value={since}
@@ -90,10 +91,11 @@ export function DateRangePicker({
           </div>
           <div className="space-y-1">
             <label htmlFor={`${id}-until`} className="text-xs text-muted-foreground">
-              Until (local time)
+              Until
             </label>
             <Input
               id={`${id}-until`}
+              aria-label="Until"
               type="datetime-local"
               step="1"
               value={until}

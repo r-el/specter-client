@@ -108,7 +108,7 @@ function CameraForm({ camera, onClose, onSaving }: {
           <Input required maxLength={MAX_CAMERA_NAME_LENGTH} value={name} onChange={(event) => setName(event.target.value)} />
         </label>
         <div className="space-y-1 text-sm">
-          <label className="font-medium">Source URL</label>
+          <label htmlFor="source-url" className="font-medium">Source URL</label>
           <div className="flex gap-1.5 pb-1" aria-label="Quick protocol prefixes">
             {(["rtsp://", "rtsps://", "http://"] as const).map((proto) => (
               <button
@@ -127,7 +127,7 @@ function CameraForm({ camera, onClose, onSaving }: {
               </button>
             ))}
           </div>
-          <Input required maxLength={MAX_SOURCE_URL_LENGTH} placeholder="rtsp://camera-host:554/stream or ffmpeg:/dev/video0" autoComplete="off" value={sourceUrl} onChange={(event) => setSourceUrl(event.target.value)} />
+          <Input id="source-url" required maxLength={MAX_SOURCE_URL_LENGTH} placeholder="rtsp://camera-host:554/stream or ffmpeg:/dev/video0" autoComplete="off" value={sourceUrl} onChange={(event) => setSourceUrl(event.target.value)} />
         </div>
         <label className="block space-y-1 text-sm">Location
           <Input maxLength={MAX_LOCATION_LENGTH} value={location} onChange={(event) => setLocation(event.target.value)} />

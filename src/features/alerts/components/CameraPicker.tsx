@@ -1,6 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Check, ChevronDown, ChevronUp, X } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useCameras } from "@/features/cameras/hooks/use-cameras";
@@ -17,6 +16,12 @@ export function CameraPicker({ selected, onChange, id }: CameraPickerProps) {
   const [rawInput, setRawInput] = useState("");
   const { data: cameras = [], isLoading } = useCameras();
 
+  useEffect(() => {
+    if (selected.length === 0 && rawInput !== "") {
+      setRawInput("");
+    }
+  }, [selected.length]);
+
   const toggle = (cameraId: string) => {
     onChange(
       selected.includes(cameraId)
@@ -27,14 +32,6 @@ export function CameraPicker({ selected, onChange, id }: CameraPickerProps) {
 
   const selectAll = () => onChange(cameras.map((c) => c.id));
   const clearAll = () => onChange([]);
-
-  const applyRaw = () => {
-    const ids = [...new Set(rawInput.split(",").map((s) => s.trim()).filter(Boolean))];
-    onChange(ids);
-    setRawInput("");
-    setAdvancedOpen(false);
-    setOpen(false);
-  };
 
   // Build label for trigger button
   let triggerLabel: string;
@@ -57,6 +54,9 @@ export function CameraPicker({ selected, onChange, id }: CameraPickerProps) {
           <button
             id={`${id}-camera-trigger`}
             type="button"
+            role="combobox"
+            aria-expanded={open}
+            aria-label="Select cameras"
             className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 text-sm hover:bg-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors"
           >
             <span className={selected.length === 0 ? "text-muted-foreground" : undefined}>
@@ -93,7 +93,11 @@ export function CameraPicker({ selected, onChange, id }: CameraPickerProps) {
           </div>
 
           {/* Camera list */}
-          <div className="max-h-52 overflow-y-auto py-1">
+          <div
+            role="listbox"
+            aria-label="Camera list"
+            className="max-h-52 overflow-y-auto py-1"
+          >
             {isLoading ? (
               <p className="px-3 py-4 text-center text-xs text-muted-foreground">Loading cameras…</p>
             ) : cameras.length === 0 ? (
@@ -106,6 +110,8 @@ export function CameraPicker({ selected, onChange, id }: CameraPickerProps) {
                   <button
                     key={cam.id}
                     type="button"
+                    role="option"
+                    aria-selected={isSelected}
                     onClick={() => toggle(cam.id)}
                     className="flex w-full items-center gap-2.5 px-3 py-2 text-sm hover:bg-white/5 transition-colors"
                   >
@@ -132,37 +138,43 @@ export function CameraPicker({ selected, onChange, id }: CameraPickerProps) {
               })
             )}
           </div>
-
-          {/* Advanced: raw IDs */}
-          <div className="border-t border-white/10">
-            <button
-              type="button"
-              onClick={() => setAdvancedOpen((v) => !v)}
-              className="flex w-full items-center justify-between px-3 py-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Advanced: filter by raw camera IDs
-              {advancedOpen ? (
-                <ChevronUp className="h-3 w-3" aria-hidden="true" />
-              ) : (
-                <ChevronDown className="h-3 w-3" aria-hidden="true" />
-              )}
-            </button>
-            {advancedOpen && (
-              <div className="px-3 pb-3 space-y-2">
-                <Input
-                  placeholder="Paste comma-separated IDs"
-                  value={rawInput}
-                  onChange={(e) => setRawInput(e.target.value)}
-                  className="h-8 text-xs"
-                />
-                <Button type="button" size="sm" className="w-full h-7 text-xs" onClick={applyRaw}>
-                  Apply raw IDs
-                </Button>
-              </div>
-            )}
-          </div>
         </PopoverContent>
       </Popover>
+
+      {/* Advanced: raw IDs */}
+      <div className="pt-0.5">
+        <button
+          type="button"
+          onClick={() => setAdvancedOpen((v) => !v)}
+          className="flex w-full items-center justify-between text-xs text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <span>Advanced: filter by raw camera IDs</span>
+          {advancedOpen ? (
+            <ChevronUp className="h-3 w-3" aria-hidden="true" />
+          ) : (
+            <ChevronDown className="h-3 w-3" aria-hidden="true" />
+          )}
+        </button>
+        {advancedOpen && (
+          <div className="pt-2 space-y-2">
+            <label htmlFor={`${id}-manual-cameras`} className="sr-only">
+              Manual camera IDs
+            </label>
+            <Input
+              id={`${id}-manual-cameras`}
+              aria-label="Manual camera IDs"
+              placeholder="Paste comma-separated IDs"
+              value={rawInput}
+              onChange={(e) => {
+                setRawInput(e.target.value);
+                const ids = [...new Set(e.target.value.split(",").map((s) => s.trim()).filter(Boolean))];
+                onChange(ids);
+              }}
+              className="h-8 text-xs"
+            />
+          </div>
+        )}
+      </div>
 
       {/* Active camera chips */}
       {selected.length > 0 && cameras.length > 0 && (
