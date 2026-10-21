@@ -17,6 +17,9 @@ export function getApiBaseUrl(): string {
     window.location.hostname !== "localhost" &&
     window.location.hostname !== "127.0.0.1"
   ) {
+    if (window.location.hostname.endsWith("eyec.live")) {
+      return "https://api.eyec.live";
+    }
     return window.location.origin;
   }
 
