@@ -1,6 +1,7 @@
 import { io, type Socket } from "socket.io-client";
 import { getLiveIceServers, liveFailure, type LiveFailure } from "../api/live";
 import type { PlaybackState } from "./mse-session";
+import { waitForIceGathering } from "./ice-gathering";
 
 const STALL_TIMEOUT_MS = 15000;
 
@@ -34,6 +35,7 @@ export function startWebrtcSession(
     if (socket) {
       socket.off("webrtc:answer");
       socket.off("webrtc:ice_candidate");
+      socket.off("webrtc:error");
       socket.disconnect();
     }
 
@@ -128,17 +130,27 @@ export function startWebrtcSession(
         }
       });
 
+      socket.on("webrtc:error", (payload: { cameraId: string; correlationId: string; error: string; retryable?: boolean }) => {
+        if (disposed || payload.correlationId !== correlationId) return;
+        fail(payload.error || "WebRTC connection failed", payload.retryable ?? false);
+      });
+
       // 4. Create offer and send to agent
       pc.addTransceiver("video", { direction: "recvonly" });
       const offer = await pc.createOffer();
       if (disposed) return;
       await pc.setLocalDescription(offer);
 
+      await waitForIceGathering(pc, 1500);
+      if (disposed) return;
+
+      const finalSdp = pc.localDescription?.sdp ?? offer.sdp;
+
       const sendOffer = () => {
-        if (disposed || !offer.sdp) return;
+        if (disposed || !finalSdp) return;
         socket?.emit("webrtc:offer", {
           cameraId,
-          sdp: offer.sdp,
+          sdp: finalSdp,
           correlationId,
         });
         while (pendingCandidates.length > 0) {
