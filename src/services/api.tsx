@@ -1,6 +1,7 @@
 import axios from "axios";
+import { getApiBaseUrl } from "@/config/api";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:12113";
+const API_BASE_URL = getApiBaseUrl();
 
 const API_URL = `${API_BASE_URL.replace(/\/$/, "")}/api`;
 

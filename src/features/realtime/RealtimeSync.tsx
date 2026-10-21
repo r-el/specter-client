@@ -5,6 +5,7 @@ import { useAuth } from "@/context/AuthContext";
 import type { CameraDetails } from "@/features/cameras/api/cameras";
 
 import { showAlertToast, type Notification } from "./notificationToast";
+import { getApiBaseUrl } from "@/config/api";
 
 /** One authenticated connection for the shell; the server assigns authorized camera rooms. */
 export function RealtimeSync() {
@@ -28,7 +29,7 @@ export function RealtimeSync() {
         pending.clear();
       }, 250);
     };
-    const socket = io(import.meta.env.VITE_API_BASE_URL ?? "http://localhost:12113", {
+    const socket = io(getApiBaseUrl(), {
       auth: (callback) => callback({ token: localStorage.getItem("token") ?? "" }),
       autoConnect: false,
     });

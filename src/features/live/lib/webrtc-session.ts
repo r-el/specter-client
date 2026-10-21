@@ -2,6 +2,7 @@ import { io, type Socket } from "socket.io-client";
 import { getLiveIceServers, liveFailure, type LiveFailure } from "../api/live";
 import type { PlaybackState } from "./mse-session";
 import { waitForIceGathering } from "./ice-gathering";
+import { getApiBaseUrl } from "@/config/api";
 
 const STALL_TIMEOUT_MS = 15000;
 
@@ -90,7 +91,7 @@ export function startWebrtcSession(
 
       // 3. Connect to signaling socket
       const token = localStorage.getItem("token") ?? "";
-      const baseUrl = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:12113";
+      const baseUrl = getApiBaseUrl();
       socket = io(baseUrl, {
         auth: { token: `Bearer ${token}` },
         transports: ["websocket", "polling"],
